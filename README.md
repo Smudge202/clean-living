@@ -34,7 +34,7 @@ Twitter: https://twitter.com/Smudge202
 
 ---------
 
-**Dan Kirkhan (herecydev)**
+**Dan Kirkham (herecydev)**
 
 I'm Dan, junior developer; pro gamer.
 
