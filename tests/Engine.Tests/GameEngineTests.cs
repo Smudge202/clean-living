@@ -49,7 +49,7 @@ namespace CleanLiving.Engine.Tests
             {
                 // TODO(DANjEEEEE): I'm not sure if this is the correct way to test / implement this, so any advice would be useful.
                 var engine = new GameEngine<Fake.GameTime>(DefaultConfig, DefaultTranslator, DefaultClock);
-                using (engine) { }
+                engine.Dispose();
 
                 Action act = () => engine.Publish(new Fake.Event());
                 act.ShouldThrow<ObjectDisposedException>();
@@ -61,7 +61,7 @@ namespace CleanLiving.Engine.Tests
                 // TODO(DANjEEEEE): I'm not sure if this is the correct way to test / implement this, so any advice would be useful.
                 var engine = new GameEngine<Fake.GameTime>(DefaultConfig, DefaultTranslator, DefaultClock);
                 var observer = new Mock<IObserver<Fake.Event>>();
-                using (engine) { }
+                engine.Dispose();
 
                 Action act = () => engine.Subscribe(observer.Object);
                 act.ShouldThrow<ObjectDisposedException>();
@@ -71,6 +71,7 @@ namespace CleanLiving.Engine.Tests
             public void WhenDisposedThenSubscriptionsShouldAlsoBeDisposed()
             {
                 // TODO(DANjEEEEE): I'm not sure how I should have written a test for this, so any advice would be useful.
+                Assert.True(false);
             }
         }
 
