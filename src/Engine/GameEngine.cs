@@ -29,6 +29,8 @@ namespace CleanLiving.Engine
 
         public void OnNext<T>(T message, EngineTime time) where T : IEvent
         {
+            if (_disposedValue) throw new ObjectDisposedException("GameEngine");
+
             var timeSubscriptions = _timeSubscriptions[typeof(T)]
                 .Select(x => x as GameTimeSubscription<T, TTime>);
             foreach (var subscription in timeSubscriptions)
@@ -37,6 +39,8 @@ namespace CleanLiving.Engine
 
         public void Publish<T>(T message) where T : IEvent
         {
+            if (_disposedValue) throw new ObjectDisposedException("GameEngine");
+
             var eventSubscriptions = _eventSubscriptions[typeof(T)]
                 .Select(x => x as GameEventSubscription<T>);
             foreach (var subscription in eventSubscriptions)
@@ -45,9 +49,12 @@ namespace CleanLiving.Engine
 
         public IDisposable Subscribe<T>(IObserver<T> observer) where T : IEvent
         {
+            if (_disposedValue) throw new ObjectDisposedException(nameof(GameEngine<TTime>));
             if (observer == null) throw new ArgumentNullException(nameof(observer));
+
             var subscription = new GameEventSubscription<T>(observer);
             var eventType = typeof(T);
+
             if (_eventSubscriptions.ContainsKey(eventType))
                 _eventSubscriptions[eventType].Add(subscription);
             else
@@ -81,5 +88,43 @@ namespace CleanLiving.Engine
         {
             throw new NotImplementedException();
         }
+
+        #region IDisposable Implementation
+
+        private bool _disposedValue = false;
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposedValue || !disposing)
+                return;
+
+            DisposeSubscriptionCollection(_eventSubscriptions);
+            DisposeSubscriptionCollection(_timeSubscriptions);
+
+            _eventSubscriptions = null;
+            _timeSubscriptions = null;
+            _disposedValue = true;
+            
+        }
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+
+        private void DisposeSubscriptionCollection<T>(Dictionary<Type, List<T>> subscriptions) where T : IDisposable
+        {
+            if (subscriptions != null && subscriptions.Any())
+            {
+                foreach (var item in subscriptions)
+                {
+                    foreach (var subscription in item.Value)
+                        subscription.Dispose();
+
+                    subscriptions.Remove(item.Key);
+                }
+            }
+        }
+
+        #endregion
     }
 }
