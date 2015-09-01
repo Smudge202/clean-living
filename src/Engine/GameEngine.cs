@@ -29,6 +29,8 @@ namespace CleanLiving.Engine
 
         public void OnNext<T>(T message, EngineTime time) where T : IEvent
         {
+            if (_disposedValue) throw new ObjectDisposedException("GameEngine");
+
             var timeSubscriptions = _timeSubscriptions[typeof(T)]
                 .Select(x => x as GameTimeSubscription<T, TTime>);
             foreach (var subscription in timeSubscriptions)
@@ -37,6 +39,8 @@ namespace CleanLiving.Engine
 
         public void Publish<T>(T message) where T : IEvent
         {
+            if (_disposedValue) throw new ObjectDisposedException("GameEngine");
+
             var eventSubscriptions = _eventSubscriptions[typeof(T)]
                 .Select(x => x as GameEventSubscription<T>);
             foreach (var subscription in eventSubscriptions)
@@ -45,9 +49,12 @@ namespace CleanLiving.Engine
 
         public IDisposable Subscribe<T>(IObserver<T> observer) where T : IEvent
         {
+            if (_disposedValue) throw new ObjectDisposedException("GameEngine");
             if (observer == null) throw new ArgumentNullException(nameof(observer));
+
             var subscription = new GameEventSubscription<T>(observer);
             var eventType = typeof(T);
+
             if (_eventSubscriptions.ContainsKey(eventType))
                 _eventSubscriptions[eventType].Add(subscription);
             else
@@ -81,5 +88,55 @@ namespace CleanLiving.Engine
         {
             throw new NotImplementedException();
         }
+
+        #region IDisposable Implementation
+
+        private bool _disposedValue = false;
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposedValue)
+            {
+                if (disposing)
+                {
+                    if (_eventSubscriptions != null && _eventSubscriptions.Any())
+                    {
+                        foreach (var item in _eventSubscriptions)
+                        {
+                            foreach (var subscription in item.Value)
+                            {
+                                subscription.Dispose();
+                            }
+
+                            _eventSubscriptions.Remove(item.Key);
+                        }
+                    }
+
+                    if (_timeSubscriptions != null && _timeSubscriptions.Any())
+                    {
+                        foreach (var item in _timeSubscriptions)
+                        {
+                            foreach (var subscription in item.Value)
+                            {
+                                subscription.Dispose();
+                            }
+
+                            _timeSubscriptions.Remove(item.Key);
+                        }
+                    }
+                }
+
+                _eventSubscriptions = null;
+                _timeSubscriptions = null;
+
+                _disposedValue = true;
+            }
+        }
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+
+        #endregion
     }
 }
